@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"github.com/deeramster/go_final_project/db"
 	"log"
 	"net/http"
 	"os"
@@ -10,10 +11,10 @@ import (
 )
 
 func main() {
-	//Get .env variables
+	//Get env variables
 	err := godotenv.Load()
 	if err != nil {
-		log.Println("Error loading .env file, using default environment variables")
+		log.Println("Error loading env file, using default environment variables")
 	}
 
 	port := getPort()
@@ -22,7 +23,7 @@ func main() {
 	http.Handle("/", http.FileServer(http.Dir("./web")))
 
 	//Init DB or create if not exist
-	initDB()
+	db.InitDB()
 
 	//Server initialization
 	fmt.Printf("Server running on port %s...", port)
@@ -33,7 +34,7 @@ func main() {
 func getPort() string {
 	port := os.Getenv("TODO_PORT")
 	if port == "" {
-		port = "7540"
+		port = "8080"
 	}
 	return port
 }
