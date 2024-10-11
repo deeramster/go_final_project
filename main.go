@@ -21,6 +21,9 @@ func main() {
 	//Static files
 	http.Handle("/", http.FileServer(http.Dir("./web")))
 
+	//Init DB or create if not exist
+	initDB()
+
 	//Server initialization
 	fmt.Printf("Server running on port %s...", port)
 	log.Fatal(http.ListenAndServe(":"+port, nil))
