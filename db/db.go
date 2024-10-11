@@ -6,6 +6,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"strings"
 
 	_ "github.com/mattn/go-sqlite3"
 )
@@ -165,4 +166,85 @@ func MarkTaskDoneInDB(taskID int, nextDate string) error {
 		_, err = db.Exec(query, nextDate, taskID)
 	}
 	return err
+}
+
+func SearchTasksByDate(date string) ([]Task, error) {
+	dbFile := os.Getenv("TODO_DBFILE")
+	if dbFile == "" {
+		dbFile = "scheduler.db"
+	}
+	db, err := sql.Open("sqlite3", dbFile)
+	if err != nil {
+		return nil, err
+	}
+	defer db.Close()
+
+	query := `
+  		SELECT id, date, title, comment, repeat 
+  		FROM scheduler 
+  		WHERE date = ?
+  		ORDER BY date
+  		LIMIT 50
+ 	`
+	rows, err := db.Query(query, date)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var tasks []Task
+	for rows.Next() {
+		var task Task
+		if err := rows.Scan(&task.ID, &task.Date, &task.Title, &task.Comment, &task.Repeat); err != nil {
+			return nil, err
+		}
+		tasks = append(tasks, task)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return tasks, nil
+}
+
+func SearchTasksByText(search string) ([]Task, error) {
+	dbFilePath := "scheduler.db"
+	db, err := sql.Open("sqlite3", dbFilePath)
+	if err != nil {
+		return nil, err
+	}
+	defer db.Close()
+
+	// Подготовка поисковой строки для использования в SQL LIKE
+	searchPattern := "%" + strings.ToLower(search) + "%"
+
+	query := `
+  		SELECT id, date, title, comment, repeat 
+  		FROM scheduler 
+  		WHERE LOWER(title) LIKE ? OR LOWER(comment) LIKE ?
+  		ORDER BY date
+  		LIMIT 50
+ 	`
+
+	rows, err := db.Query(query, searchPattern, searchPattern)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var tasks []Task
+	for rows.Next() {
+		var task Task
+		if err := rows.Scan(&task.ID, &task.Date, &task.Title, &task.Comment, &task.Repeat); err != nil {
+			return nil, err
+		}
+		tasks = append(tasks, task)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return tasks, nil
 }

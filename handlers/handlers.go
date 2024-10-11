@@ -38,7 +38,24 @@ func HandleTask(w http.ResponseWriter, r *http.Request) {
 }
 
 func HandleTasks(w http.ResponseWriter, r *http.Request) {
-	tasks, err := db.GetTasksFromDB()
+	search := r.URL.Query().Get("search")
+
+	var tasks []db.Task
+	var err error
+
+	if search != "" {
+		// Checking and format date from this layout DD.MM.YYYY
+		if parsedDate, err := time.Parse("02.01.2006", search); err == nil {
+			tasks, err = db.SearchTasksByDate(parsedDate.Format("20060102"))
+		} else {
+			// Searching by title or comment
+			tasks, err = db.SearchTasksByText(search)
+		}
+	} else {
+		// Return all tasks if search empty
+		tasks, err = db.GetTasksFromDB()
+	}
+
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
