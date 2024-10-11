@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"github.com/deeramster/go_final_project/db"
+	"github.com/deeramster/go_final_project/handlers"
 	"log"
 	"net/http"
 	"os"
@@ -21,6 +22,11 @@ func main() {
 
 	//Static files
 	http.Handle("/", http.FileServer(http.Dir("./web")))
+
+	//API endpoints
+	http.HandleFunc("/api/task", handlers.HandleTask)
+	http.HandleFunc("/api/tasks", handlers.HandleTasks)
+	http.HandleFunc("/api/task/done", handlers.HandleTaskDone)
 
 	//Init DB or create if not exist
 	db.InitDB()

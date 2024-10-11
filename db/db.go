@@ -10,6 +10,14 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 )
 
+type Task struct {
+	ID      string `json:"id"`
+	Date    string `json:"date"`
+	Title   string `json:"title,omitempty" binding:"required"`
+	Comment string `json:"comment"`
+	Repeat  string `json:"repeat"`
+}
+
 func InitDB() {
 	// Получаем путь к базе данных
 	dbFile := os.Getenv("TODO_DBFILE")
@@ -57,4 +65,104 @@ func InitDB() {
 	} else {
 		fmt.Println("Database already exists.")
 	}
+}
+
+func AddTaskToDB(task Task) (int64, error) {
+	dbFile := os.Getenv("TODO_DBFILE")
+	if dbFile == "" {
+		dbFile = "scheduler.db"
+	}
+	db, err := sql.Open("sqlite3", dbFile)
+	if err != nil {
+		return 0, err
+	}
+	defer db.Close()
+
+	query := "INSERT INTO scheduler (date, title, comment, repeat) VALUES (?, ?, ?, ?)"
+	res, err := db.Exec(query, task.Date, task.Title, task.Comment, task.Repeat)
+	if err != nil {
+		return 0, err
+	}
+
+	return res.LastInsertId()
+}
+
+func GetTasksFromDB() ([]Task, error) {
+	dbFile := os.Getenv("TODO_DBFILE")
+	if dbFile == "" {
+		dbFile = "scheduler.db"
+	}
+	db, err := sql.Open("sqlite3", dbFile)
+	if err != nil {
+		return nil, err
+	}
+	defer db.Close()
+
+	rows, err := db.Query("SELECT id, date, title, comment, repeat FROM scheduler ORDER BY date LIMIT 50")
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var tasks []Task
+	for rows.Next() {
+		var task Task
+		if err := rows.Scan(&task.ID, &task.Date, &task.Title, &task.Comment, &task.Repeat); err != nil {
+			return nil, err
+		}
+		tasks = append(tasks, task)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return tasks, nil
+}
+
+func GetTaskByID(id int) (Task, error) {
+	dbFile := os.Getenv("TODO_DBFILE")
+	if dbFile == "" {
+		dbFile = "scheduler.db"
+	}
+	db, err := sql.Open("sqlite3", dbFile)
+	if err != nil {
+		return Task{}, err
+	}
+	defer db.Close()
+
+	var task Task
+	query := "SELECT id, date, title, comment, repeat FROM scheduler WHERE id = ?"
+	err = db.QueryRow(query, id).Scan(&task.ID, &task.Date, &task.Title, &task.Comment, &task.Repeat)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return Task{}, fmt.Errorf("task not found")
+		}
+		return Task{}, err
+	}
+
+	return task, nil
+}
+
+func MarkTaskDoneInDB(taskID int, nextDate string) error {
+	dbFile := os.Getenv("TODO_DBFILE")
+	if dbFile == "" {
+		dbFile = "scheduler.db"
+	}
+	db, err := sql.Open("sqlite3", dbFile)
+	if err != nil {
+		return err
+	}
+	defer db.Close()
+
+	if nextDate == "" {
+		// Обычная задача, просто удаляем
+		query := "DELETE FROM scheduler WHERE id = ?"
+		_, err = db.Exec(query, taskID)
+	} else {
+		// Повторяющаяся задача, обновляем дату
+		query := "UPDATE scheduler SET date = ? WHERE id = ?"
+		_, err = db.Exec(query, nextDate, taskID)
+	}
+	return err
 }
