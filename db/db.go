@@ -2,10 +2,10 @@ package db
 
 import (
 	"database/sql"
+	"errors"
 	"fmt"
 	"log"
 	"os"
-	"path/filepath"
 	"strings"
 
 	_ "github.com/mattn/go-sqlite3"
@@ -20,27 +20,17 @@ type Task struct {
 }
 
 func InitDB() {
-	// Получаем путь к базе данных
 	dbFile := os.Getenv("TODO_DBFILE")
 	if dbFile == "" {
 		dbFile = "scheduler.db"
 	}
 
-	// Используем полный путь к файлу базы данных
-	executablePath, err := os.Executable()
-	if err != nil {
-		log.Fatal("Cannot find executable path:", err)
-	}
-	dbFilePath := filepath.Join(filepath.Dir(executablePath), dbFile)
-	fmt.Println(dbFilePath)
-
 	// Is exist
-	_, err = os.Stat(dbFilePath)
+	_, err := os.Stat(dbFile)
 	if os.IsNotExist(err) {
 		// If not exist, create new
 		fmt.Println("Creating database...")
-
-		db, err := sql.Open("sqlite3", dbFilePath)
+		db, err := sql.Open("sqlite3", dbFile)
 		if err != nil {
 			log.Fatal("Error opening DB:", err)
 		}
@@ -136,7 +126,7 @@ func GetTaskByID(id int) (Task, error) {
 	query := "SELECT id, date, title, comment, repeat FROM scheduler WHERE id = ?"
 	err = db.QueryRow(query, id).Scan(&task.ID, &task.Date, &task.Title, &task.Comment, &task.Repeat)
 	if err != nil {
-		if err == sql.ErrNoRows {
+		if errors.Is(err, sql.ErrNoRows) {
 			return Task{}, fmt.Errorf("task not found")
 		}
 		return Task{}, err
@@ -209,8 +199,11 @@ func SearchTasksByDate(date string) ([]Task, error) {
 }
 
 func SearchTasksByText(search string) ([]Task, error) {
-	dbFilePath := "scheduler.db"
-	db, err := sql.Open("sqlite3", dbFilePath)
+	dbFile := os.Getenv("TODO_DBFILE")
+	if dbFile == "" {
+		dbFile = "scheduler.db"
+	}
+	db, err := sql.Open("sqlite3", dbFile)
 	if err != nil {
 		return nil, err
 	}
@@ -247,4 +240,36 @@ func SearchTasksByText(search string) ([]Task, error) {
 	}
 
 	return tasks, nil
+}
+
+func UpdateTaskInDB(task Task) error {
+	dbFile := os.Getenv("TODO_DBFILE")
+	if dbFile == "" {
+		dbFile = "scheduler.db"
+	}
+	db, err := sql.Open("sqlite3", dbFile)
+	if err != nil {
+		return err
+	}
+	defer db.Close()
+
+	query := "UPDATE scheduler SET date = ?, title = ?, comment = ?, repeat = ? WHERE id = ?"
+	_, err = db.Exec(query, task.Date, task.Title, task.Comment, task.Repeat, task.ID)
+	return err
+}
+
+func DeleteTaskFromDB(taskID int) error {
+	dbFile := os.Getenv("TODO_DBFILE")
+	if dbFile == "" {
+		dbFile = "scheduler.db"
+	}
+	db, err := sql.Open("sqlite3", dbFile)
+	if err != nil {
+		return err
+	}
+	defer db.Close()
+
+	query := "DELETE FROM scheduler WHERE id = ?"
+	_, err = db.Exec(query, taskID)
+	return err
 }

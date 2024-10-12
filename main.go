@@ -27,6 +27,7 @@ func main() {
 	http.HandleFunc("/api/task", handlers.HandleTask)
 	http.HandleFunc("/api/tasks", handlers.HandleTasks)
 	http.HandleFunc("/api/task/done", handlers.HandleTaskDone)
+	http.HandleFunc("/api/nextdate", handlers.HandleNextDate)
 
 	//Init DB or create if not exist
 	db.InitDB()
