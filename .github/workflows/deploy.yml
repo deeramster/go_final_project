@@ -11,7 +11,7 @@ jobs:
       - name: Vet
         run: go vet ./...
       - name: Run Unit Tests
-        run: GOOS=linux GOARCH=amd64 go test -cover ./tests
+        run: GOOS=linux GOARCH=amd64 go test ./tests
       - name: Format Code
         run: go fmt ./...
       - name: Build
