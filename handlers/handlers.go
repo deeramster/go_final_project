@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"github.com/deeramster/go_final_project/dateutil"
 	"github.com/deeramster/go_final_project/db"
+	"log"
 	"net/http"
 	"strconv"
 	"time"
@@ -203,21 +204,25 @@ func HandleTask(w http.ResponseWriter, r *http.Request) {
 
 func HandleTasks(w http.ResponseWriter, r *http.Request) {
 	search := r.URL.Query().Get("search")
+	log.Printf("Searching tasks with query: %s", search) // Логируем запрос
 
 	var tasks []db.Task
 	var err error
 
 	if search != "" {
-		// Checking and format date from this layout DD.MM.YYYY
+		// Проверка и форматирование даты
 		if parsedDate, err := time.Parse("02.01.2006", search); err == nil {
 			tasks, err = db.SearchTasksByDate(parsedDate.Format("20060102"))
+			log.Printf("Searching by date: %s, found: %d tasks", parsedDate.Format("20060102"), len(tasks))
 		} else {
-			// Searching by title or comment
+			// Поиск по заголовку или комментарию
 			tasks, err = db.SearchTasksByText(search)
+			log.Printf("Searching by text: %s, found: %d tasks", search, len(tasks))
 		}
 	} else {
-		// Return all tasks if search empty
+		// Возвращаем все задачи, если строка поиска пустая
 		tasks, err = db.GetTasksFromDB()
+		log.Printf("Returning all tasks, found: %d tasks", len(tasks))
 	}
 
 	if err != nil {

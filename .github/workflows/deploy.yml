@@ -45,7 +45,7 @@ jobs:
         with:
           context: .
           file: ./Dockerfile
-          push: false # Установите в true, если хотите запушить образ в Docker Hub или другой реестр
+          push: false
           tags: my-web-server:latest
 
       - name: Run Tests

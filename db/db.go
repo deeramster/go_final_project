@@ -3,11 +3,9 @@ package db
 import (
 	"database/sql"
 	"fmt"
+	_ "github.com/mattn/go-sqlite3"
 	"log"
 	"os"
-	"strings"
-
-	_ "github.com/mattn/go-sqlite3"
 )
 
 type Task struct {
@@ -199,41 +197,52 @@ func SearchTasksByText(search string) ([]Task, error) {
 	if dbFile == "" {
 		dbFile = "scheduler.db"
 	}
+
 	db, err := sql.Open("sqlite3", dbFile)
 	if err != nil {
 		return nil, err
 	}
 	defer db.Close()
 
+	var tasks []Task
+	log.Printf("Searching for tasks with query: %s", search) // Логируем запрос
+
 	// Подготовка поисковой строки для использования в SQL LIKE
-	searchPattern := "%" + strings.ToLower(search) + "%"
+	searchPattern := fmt.Sprintf("%%%s%%", search)
 
-	query := `
-  		SELECT id, date, title, comment, repeat 
-  		FROM scheduler 
-  		WHERE LOWER(title) LIKE ? OR LOWER(comment) LIKE ?
-  		ORDER BY date
-  		LIMIT 50
- 	`
+	// SQL-запрос для поиска задач по заголовку и комментарию
+	query := `SELECT id, date, title, comment, repeat 
+              FROM scheduler 
+              WHERE title LIKE ? OR comment LIKE ? 
+              ORDER BY date 
+              LIMIT 10`
 
+	// Выполнение запроса
 	rows, err := db.Query(query, searchPattern, searchPattern)
 	if err != nil {
+		log.Printf("Error executing search query: %s", err)
 		return nil, err
 	}
 	defer rows.Close()
 
-	var tasks []Task
+	// Обработка результатов запроса
 	for rows.Next() {
 		var task Task
 		if err := rows.Scan(&task.ID, &task.Date, &task.Title, &task.Comment, &task.Repeat); err != nil {
+			log.Printf("Error scanning task: %s", err)
 			return nil, err
 		}
 		tasks = append(tasks, task)
 	}
 
+	// Проверка на наличие ошибок после завершения перебора
 	if err := rows.Err(); err != nil {
+		log.Printf("Error during rows iteration: %s", err)
 		return nil, err
 	}
+
+	// Логирование количества найденных задач
+	log.Printf("Found %d tasks for search query: %s", len(tasks), search)
 
 	return tasks, nil
 }
