@@ -26,9 +26,7 @@ jobs:
         run: sudo apt-get install sqlite3 libsqlite3-dev
 
       - name: Lint the code
-        run: |
-          go get -u golang.org/x/lint/golint
-          golint ./...
+        run: go vet ./...
 
       - name: Run tests
         run: go test ./... -v
