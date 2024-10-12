@@ -2,7 +2,6 @@ package db
 
 import (
 	"database/sql"
-	"errors"
 	"fmt"
 	"log"
 	"os"
@@ -69,13 +68,13 @@ func AddTaskToDB(task Task) (int64, error) {
 	}
 	defer db.Close()
 
-	query := "INSERT INTO scheduler (date, title, comment, repeat) VALUES (?, ?, ?, ?)"
-	res, err := db.Exec(query, task.Date, task.Title, task.Comment, task.Repeat)
+	query := "INSERT INTO scheduler (title, date, comment, repeat) VALUES (?, ?, ?, ?)"
+	result, err := db.Exec(query, task.Title, task.Date, task.Comment, task.Repeat)
 	if err != nil {
 		return 0, err
 	}
 
-	return res.LastInsertId()
+	return result.LastInsertId()
 }
 
 func GetTasksFromDB() ([]Task, error) {
@@ -111,7 +110,7 @@ func GetTasksFromDB() ([]Task, error) {
 	return tasks, nil
 }
 
-func GetTaskByID(id int) (Task, error) {
+func GetTaskByID(taskID int) (Task, error) {
 	dbFile := os.Getenv("TODO_DBFILE")
 	if dbFile == "" {
 		dbFile = "scheduler.db"
@@ -123,19 +122,16 @@ func GetTaskByID(id int) (Task, error) {
 	defer db.Close()
 
 	var task Task
-	query := "SELECT id, date, title, comment, repeat FROM scheduler WHERE id = ?"
-	err = db.QueryRow(query, id).Scan(&task.ID, &task.Date, &task.Title, &task.Comment, &task.Repeat)
+	query := "SELECT id, title, date, comment, repeat FROM scheduler WHERE id = ?"
+	err = db.QueryRow(query, taskID).Scan(&task.ID, &task.Title, &task.Date, &task.Comment, &task.Repeat)
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return Task{}, fmt.Errorf("task not found")
-		}
 		return Task{}, err
 	}
 
 	return task, nil
 }
 
-func MarkTaskDoneInDB(taskID int, nextDate string) error {
+func MarkTaskAsDone(taskID int, nextDate string) error {
 	dbFile := os.Getenv("TODO_DBFILE")
 	if dbFile == "" {
 		dbFile = "scheduler.db"
