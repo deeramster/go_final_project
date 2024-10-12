@@ -112,5 +112,5 @@ func NextDate(now time.Time, date string, repeat string) (string, error) {
 		return "", errors.New("неподдерживаемый формат")
 	}
 
-	return "", errors.New("не удалось найти следующую дату")
+	//return "", errors.New("не удалось найти следующую дату")
 }
