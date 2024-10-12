@@ -15,14 +15,6 @@ WORKDIR /opt/
 
 COPY --from=builder /app/scheduler .
 
-ARG PORT
-ARG TODO_DBFILE
-ARG TODO_PASSWORD
-ENV TODO_PORT=${{PORT}}
-ENV TODO_DBFILE=${{DB_NAME}}
-ENV TODO_PASSWORD=${{PASSWORD}}
-
-
 COPY web ./web
 
 CMD ["./scheduler"]

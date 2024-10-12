@@ -67,7 +67,3 @@ jobs:
           context: ./
           push: true
           tags: rocketikman/scheduler:latest
-          build-args: |
-            TODO_PORT: ${{ secrets.PORT }}
-            TODO_DBFILE: ${{ secrets.DB_NAME }}
-            TODO_PASSWORD: ${{ secrets.PASSWORD }}
