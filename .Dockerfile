@@ -22,8 +22,7 @@ ENV TODO_PORT=${{PORT}}
 ENV TODO_DBFILE=${{DB_NAME}}
 ENV TODO_PASSWORD=${{PASSWORD}}
 
-# Копируем статические файлы
+
 COPY web ./web
 
-# Команда для запуска приложения
 CMD ["./scheduler"]
