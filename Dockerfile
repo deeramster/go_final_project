@@ -1,4 +1,10 @@
-FROM golang:1.23.2 AS builder
+FROM ubuntu:latest AS builder
+
+RUN apt-get update && apt-get install -y \
+    golang \
+    gcc \
+    make \
+    && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
@@ -9,13 +15,14 @@ COPY . .
 
 RUN go build -o scheduler ./main.go
 
-FROM alpine:latest
+FROM ubuntu:latest
 
 WORKDIR /app
 
-COPY --from=builder /app/scheduler .
+COPY --from=builder /app/scheduler /app/scheduler
+COPY web /app/web
+COPY .env /app/.env
 
-COPY web ./web
-COPY .env ./.env
+EXPOSE 7540
 
 CMD ["./scheduler"]
