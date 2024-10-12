@@ -3,9 +3,11 @@ on: push
 jobs:
   test:
     runs-on: ubuntu-latest
-    container: golang:1.23.2-cgo
+    container: golang:1.23.2-alpine
     steps:
       - uses: actions/checkout@v4
+      - name: Set CGO_ENABLED
+        run: echo "CGO_ENABLED=1" >> $GITHUB_ENV
       - name: Install Dependencies
         run: go mod download
       - name: Vet
