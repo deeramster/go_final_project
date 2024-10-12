@@ -1,53 +1,77 @@
-name: Build, Lint, and Test Docker Image
+name: Build and Deploy
+
 on:
   push:
+    branches:
+      - main  # или ваша основная ветка
+
 jobs:
-  build:
+  test:
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
 
+      - name: Create .env file
+        run: |
+          echo "TODO_PORT=${{ secrets.PORT }}" >> .env
+          echo "TODO_DBFILE=${{ secrets.DB_NAME }}" >> .env
+          echo "TODO_PASSWORD=${{ secrets.PASSWORD }}" >> .env
+
       - name: Set up Go
         uses: actions/setup-go@v2
         with:
           go-version: '1.23.2'
 
-      - name: Cache Go modules
-        uses: actions/cache@v2
-        with:
-          path: ~/go/pkg/mod
-          key: ${{ runner.os }}-go-${{ hashFiles('**/*.go') }}
-          restore-keys: |
-            ${{ runner.os }}-go-
+      - name: Install SQLite
+        run: sudo apt-get install sqlite3 libsqlite3-dev
 
-      - name: Install golangci-lint
+      - name: Lint the code
         run: |
-          curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $GOPATH/bin
+          go get -u golang.org/x/lint/golint
+          golint ./...
 
-      - name: Run Linter
-        run: golangci-lint run ./...
+      - name: Run tests
+        run: go test ./... -v
+
+  build:
+    runs-on: ubuntu-latest
+    needs: test
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Create .env file
+        run: |
+          echo "TODO_PORT=${{ secrets.PORT }}" >> .env
+          echo "TODO_DBFILE=${{ secrets.DB_NAME }}" >> .env
+          echo "TODO_PASSWORD=${{ secrets.PASSWORD }}" >> .env
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v1
+        uses: docker/setup-buildx-action@v3
 
-      - name: Cache Docker layers
-        uses: actions/cache@v2
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
         with:
-          path: /tmp/.buildx-cache
-          key: ${{ runner.os }}-buildx-${{ github.sha }}
-          restore-keys: |
-            ${{ runner.os }}-buildx-
+          username: ${{ secrets.DH_USERNAME }}
+          password: ${{ secrets.DH_TOKEN }}
 
-      - name: Build Docker image
-        uses: docker/build-push-action@v2
+      - name: Extract metadata (tags, labels) for Docker
+        id: meta
+        uses: docker/metadata-action@v5.5.1
+        with:
+          images: ${{ secrets.DH_USERNAME }}/go-final-project
+
+      - name: Build and push Docker Inage
+        uses: docker/build-push-action@v5
         with:
           context: .
-          file: ./Dockerfile
-          push: false
-          tags: my-web-server:latest
-
-      - name: Run Tests
-        run: |
-          docker run --rm my-web-server:latest go test ./tests
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          build-args: |
+            TODO_PORT=${{ secrets.PORT }}
+            TODO_DBFILE=${{ secrets.DB_NAME }}
+            TODO_PASSWORD=${{ secrets.PASSWORD }}
