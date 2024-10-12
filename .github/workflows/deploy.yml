@@ -1,0 +1,23 @@
+name: go-pipeline
+on: push
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    container: golang:1.23.2-alpine
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Dependencies
+        run: go mod download
+      - name: Vet
+        run: go vet ./...
+      - name: Run Unit Tests
+        run: GOOS=linux GOARCH=amd64 go test -cover ./...
+      - name: Format Code
+        run: go fmt ./...
+      - name: Build
+        run: go build -o scheduler ./main.go
+      - name: Upload Build Artifact
+        uses: actions/upload-artifact@v3
+      with:
+        name: scheduler
+        path: scheduler
