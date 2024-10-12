@@ -1,25 +1,53 @@
-name: go-pipeline
-on: push
+name: Build, Lint, and Test Docker Image
+on:
+  push:
 jobs:
-  test:
+  build:
     runs-on: ubuntu-latest
-    container: golang:1.23.2-alpine
+
     steps:
-      - uses: actions/checkout@v4
-      - name: Set CGO_ENABLED
-        run: echo "CGO_ENABLED=1" >> $GITHUB_ENV
-      - name: Install Dependencies
-        run: go mod download
-      - name: Vet
-        run: go vet ./...
-      - name: Run Unit Tests
-        run: GOOS=linux GOARCH=amd64 go test ./tests
-      - name: Format Code
-        run: go fmt ./...
-      - name: Build
-        run: go build -o scheduler ./main.go
-      - name: Upload Build Artifact
-        uses: actions/upload-artifact@v3
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Set up Go
+        uses: actions/setup-go@v2
         with:
-          name: 'scheduler'
-          path: 'scheduler'
+          go-version: '1.23.2'
+
+      - name: Cache Go modules
+        uses: actions/cache@v2
+        with:
+          path: ~/go/pkg/mod
+          key: ${{ runner.os }}-go-${{ hashFiles('**/*.go') }}
+          restore-keys: |
+            ${{ runner.os }}-go-
+
+      - name: Install golangci-lint
+        run: |
+          curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $GOPATH/bin
+
+      - name: Run Linter
+        run: golangci-lint run ./...
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v1
+
+      - name: Cache Docker layers
+        uses: actions/cache@v2
+        with:
+          path: /tmp/.buildx-cache
+          key: ${{ runner.os }}-buildx-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-buildx-
+
+      - name: Build Docker image
+        uses: docker/build-push-action@v2
+        with:
+          context: .
+          file: ./Dockerfile
+          push: false # Установите в true, если хотите запушить образ в Docker Hub или другой реестр
+          tags: my-web-server:latest
+
+      - name: Run Tests
+        run: |
+          docker run --rm my-web-server:latest go test ./tests

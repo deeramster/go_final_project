@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"github.com/deeramster/go_final_project/auth"
 	"github.com/deeramster/go_final_project/db"
 	"github.com/deeramster/go_final_project/handlers"
 	"log"
@@ -24,9 +25,10 @@ func main() {
 	http.Handle("/", http.FileServer(http.Dir("./web")))
 
 	//API endpoints
-	http.HandleFunc("/api/task", handlers.HandleTask)
-	http.HandleFunc("/api/tasks", handlers.HandleTasks)
-	http.HandleFunc("/api/task/done", handlers.HandleTaskDone)
+	http.HandleFunc("/api/signin", handlers.HandleSignIn)
+	http.HandleFunc("/api/task", auth.Middleware(handlers.HandleTask))
+	http.HandleFunc("/api/tasks", auth.Middleware(handlers.HandleTasks))
+	http.HandleFunc("/api/task/done", auth.Middleware(handlers.HandleTaskDone))
 	http.HandleFunc("/api/nextdate", handlers.HandleNextDate)
 
 	//Init DB or create if not exist
