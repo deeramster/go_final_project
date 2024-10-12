@@ -18,6 +18,6 @@ jobs:
         run: go build -o scheduler ./main.go
       - name: Upload Build Artifact
         uses: actions/upload-artifact@v3
-      with:
-        name: scheduler
-        path: scheduler
+        with:
+          name: 'scheduler'
+          path: 'scheduler'
