@@ -11,7 +11,7 @@ RUN go build -o scheduler .
 
 FROM alpine:latest
 
-WORKDIR /opt/
+WORKDIR /app
 
 COPY --from=builder /app/scheduler .
 
