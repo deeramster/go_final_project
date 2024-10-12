@@ -15,7 +15,7 @@ WORKDIR /opt/
 
 COPY --from=builder /app/scheduler .
 
-ARG TODO_PORT
+ARG PORT
 ARG TODO_DBFILE
 ARG TODO_PASSWORD
 ENV TODO_PORT=${{PORT}}
