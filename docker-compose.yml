@@ -1,0 +1,12 @@
+version: '3.8'
+
+services:
+  scheduler:
+    image: rocketikman/scheduler:latest
+    ports:
+      - "7540:7540"
+    environment:
+      - ENV_VAR_NAME=.env
+    volumes:
+      - ./web:/app/web
+      - ./.env:/app/.env

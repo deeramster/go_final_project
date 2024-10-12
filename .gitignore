@@ -9,6 +9,7 @@
 !go.mod
 !*.db
 !Dockerfile
+!docker-compose.yml
 !.Dockerignore
 
 !*yml
