@@ -46,12 +46,6 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Create .env file
-        run: |
-          echo "TODO_PORT=${{ secrets.PORT }}" >> .env
-          echo "TODO_DBFILE=${{ secrets.DB_NAME }}" >> .env
-          echo "TODO_PASSWORD=${{ secrets.PASSWORD }}" >> .env
-
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
