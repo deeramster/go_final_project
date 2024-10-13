@@ -1,4 +1,4 @@
-FROM golang:1.23.2-alpine
+FROM golang:1.23.2-ubuntu
 
 WORKDIR /app
 
@@ -6,6 +6,6 @@ COPY . .
 
 RUN go mod download
 
-RUN go build -o /scheduler ./main.go
+RUN GOOS=linux GOARCH=amd64 CGO_ENABLED=1 go build -o /scheduler ./main.go
 
 CMD ["/scheduler"]
