@@ -99,5 +99,5 @@ jobs:
         uses: appleboy/telegram-action@master
         with:
           to: ${{ secrets.TELEGRAM_TO }}
-          token: ${{ secrets.c }}
+          token: ${{ secrets.TELEGRAM_TOKEN }}
           message: Деплой успешно выполнен!
