@@ -2,12 +2,13 @@ package main
 
 import (
 	"fmt"
-	"github.com/deeramster/go_final_project/auth"
-	"github.com/deeramster/go_final_project/db"
-	"github.com/deeramster/go_final_project/handlers"
 	"log"
 	"net/http"
 	"os"
+
+	"github.com/deeramster/go_final_project/auth"
+	"github.com/deeramster/go_final_project/db"
+	"github.com/deeramster/go_final_project/handlers"
 
 	"github.com/joho/godotenv"
 )

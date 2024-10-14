@@ -7,13 +7,15 @@ import (
 	"time"
 )
 
+const DateLayout = "20060102"
+
 // NextDate вычисляет следующую дату на основе указанного правила повторения
 func NextDate(now time.Time, date string, repeat string) (string, error) {
 	if repeat == "" {
 		return "", errors.New("не указано правило повторения")
 	}
 
-	startDate, err := time.Parse("20060102", date)
+	startDate, err := time.Parse(DateLayout, date)
 	if err != nil {
 		return "", errors.New("неверный формат даты")
 	}
@@ -25,7 +27,7 @@ func NextDate(now time.Time, date string, repeat string) (string, error) {
 		for nextDate.Before(now) {
 			nextDate = nextDate.AddDate(1, 0, 0) // продолжаем увеличивать до нахождения подходящей даты
 		}
-		return nextDate.Format("20060102"), nil
+		return nextDate.Format(DateLayout), nil
 
 	case strings.HasPrefix(repeat, "d "):
 		parts := strings.Split(repeat, " ")
@@ -42,7 +44,7 @@ func NextDate(now time.Time, date string, repeat string) (string, error) {
 		for {
 			nextDate = nextDate.AddDate(0, 0, days)
 			if nextDate.After(now) {
-				return nextDate.Format("20060102"), nil
+				return nextDate.Format(DateLayout), nil
 			}
 		}
 
@@ -74,11 +76,11 @@ func NextDate(now time.Time, date string, repeat string) (string, error) {
 					nextDate = time.Date(nextDate.Year(), nextDate.Month(), 1, 0, 0, 0, 0, nextDate.Location())
 					nextDate = nextDate.AddDate(0, 1, -2) // предпоследний день месяца
 				} else if nextDate.Day() == day {
-					return nextDate.Format("20060102"), nil
+					return nextDate.Format(DateLayout), nil
 				}
 			}
 		}
-		return nextDate.Format("20060102"), nil
+		return nextDate.Format(DateLayout), nil
 
 	case strings.HasPrefix(repeat, "w "):
 		parts := strings.Split(repeat, " ")
@@ -102,7 +104,7 @@ func NextDate(now time.Time, date string, repeat string) (string, error) {
 			if nextDate.After(now) {
 				for _, day := range weekDays {
 					if int(nextDate.Weekday()) == (day % 7) { // Sunday is 0 in Go
-						return nextDate.Format("20060102"), nil
+						return nextDate.Format(DateLayout), nil
 					}
 				}
 			}

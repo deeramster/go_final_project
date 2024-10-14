@@ -3,10 +3,13 @@ package db
 import (
 	"database/sql"
 	"fmt"
-	_ "github.com/mattn/go-sqlite3"
 	"log"
 	"os"
+
+	_ "github.com/mattn/go-sqlite3"
 )
+
+const maxTasksReturned = 50
 
 type Task struct {
 	ID      string `json:"id"`
@@ -86,7 +89,7 @@ func GetTasksFromDB() ([]Task, error) {
 	}
 	defer db.Close()
 
-	rows, err := db.Query("SELECT id, date, title, comment, repeat FROM scheduler ORDER BY date LIMIT 50")
+	rows, err := db.Query("SELECT id, date, title, comment, repeat FROM scheduler ORDER BY date LIMIT ?", maxTasksReturned)
 	if err != nil {
 		return nil, err
 	}
@@ -168,9 +171,9 @@ func SearchTasksByDate(date string) ([]Task, error) {
   		FROM scheduler 
   		WHERE date = ?
   		ORDER BY date
-  		LIMIT 50
+  		LIMIT ?
  	`
-	rows, err := db.Query(query, date)
+	rows, err := db.Query(query, date, maxTasksReturned)
 	if err != nil {
 		return nil, err
 	}
@@ -215,10 +218,10 @@ func SearchTasksByText(search string) ([]Task, error) {
               FROM scheduler 
               WHERE title LIKE ? OR comment LIKE ? 
               ORDER BY date 
-              LIMIT 10`
+              LIMIT ?`
 
 	// Выполнение запроса
-	rows, err := db.Query(query, searchPattern, searchPattern)
+	rows, err := db.Query(query, searchPattern, searchPattern, maxTasksReturned)
 	if err != nil {
 		log.Printf("Error executing search query: %s", err)
 		return nil, err
