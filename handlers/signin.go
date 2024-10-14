@@ -40,6 +40,9 @@ func HandleSignIn(w http.ResponseWriter, r *http.Request) {
 
 		// Возвращаем токен в случае успешной аутентификации
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(map[string]string{"token": creds.Password})
+		err = json.NewEncoder(w).Encode(map[string]string{"token": creds.Password})
+		if err != nil {
+			return
+		}
 	}
 }

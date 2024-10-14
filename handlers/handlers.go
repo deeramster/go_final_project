@@ -10,7 +10,8 @@ import (
 	"time"
 
 	"github.com/deeramster/go_final_project/dateutil"
-	"github.com/deeramster/go_final_project/db"
+	"github.com/deeramster/go_final_project/models"
+	"github.com/deeramster/go_final_project/taskdb"
 )
 
 func HandleTask(w http.ResponseWriter, r *http.Request) {
@@ -31,7 +32,7 @@ func HandleTask(w http.ResponseWriter, r *http.Request) {
 }
 
 func handleTaskPost(w http.ResponseWriter, r *http.Request) {
-	var task db.Task
+	var task models.Task
 	if err := json.NewDecoder(r.Body).Decode(&task); err != nil {
 		http.Error(w, `{"error": "Invalid input"}`, http.StatusBadRequest)
 		return
@@ -78,17 +79,21 @@ func handleTaskPost(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Добавление задачи в базу данных
-	id, err := db.AddTaskToDB(task)
+	id, err := taskdb.AddTaskToDB(task)
 	if err != nil {
 		http.Error(w, `{"error": "Failed to add task"}`, http.StatusInternalServerError)
 		return
 	}
 
 	// Возвращаем ID созданной задачи в формате JSON
-	json.NewEncoder(w).Encode(map[string]int64{"id": id})
+	err = json.NewEncoder(w).Encode(map[string]int64{"id": id})
+	if err != nil {
+		return
+	}
 }
+
 func handleTaskPut(w http.ResponseWriter, r *http.Request) {
-	var task db.Task
+	var task models.Task
 	if err := json.NewDecoder(r.Body).Decode(&task); err != nil {
 		http.Error(w, `{"error": "Invalid input"}`, http.StatusBadRequest)
 		return
@@ -131,14 +136,17 @@ func handleTaskPut(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Обновление задачи в базе данных
-	if err := db.UpdateTaskInDB(task); err != nil {
+	if err := taskdb.UpdateTaskInDB(task); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
 	// Возвращаем успешный ответ
 	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(task) // Возвращаем обновлённую задачу
+	err = json.NewEncoder(w).Encode(task)
+	if err != nil {
+		return
+	} // Возвращаем обновлённую задачу
 }
 
 func handleTaskGet(w http.ResponseWriter, r *http.Request) {
@@ -156,7 +164,7 @@ func handleTaskGet(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Получаем задачу из базы данных
-	task, err := db.GetTaskByID(id)
+	task, err := taskdb.GetTaskByID(id)
 	if err != nil {
 		http.Error(w, `{"error": "Задача не найдена"}`, http.StatusNotFound)
 		return
@@ -173,7 +181,10 @@ func handleTaskGet(w http.ResponseWriter, r *http.Request) {
 
 	// Устанавливаем заголовок Content-Type и возвращаем ответ
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(response)
+	err = json.NewEncoder(w).Encode(response)
+	if err != nil {
+		return
+	}
 }
 func handleTaskDelete(w http.ResponseWriter, r *http.Request) {
 	idStr := r.URL.Query().Get("id")
@@ -192,7 +203,7 @@ func handleTaskDelete(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Удаление задачи из базы данных
-	if err := db.DeleteTaskFromDB(id); err != nil {
+	if err := taskdb.DeleteTaskFromDB(id); err != nil {
 		// Если задача не найдена, возвращаем ошибку 404
 		if errors.Is(err, sql.ErrNoRows) {
 			http.Error(w, `{"error": "Task not found"}`, http.StatusNotFound)
@@ -206,27 +217,30 @@ func handleTaskDelete(w http.ResponseWriter, r *http.Request) {
 	// Возвращаем пустой JSON при успешном удалении
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK) // Возвращаем статус 200 OK
-	w.Write([]byte("{}"))        // Пустой JSON
+	_, err = w.Write([]byte("{}"))
+	if err != nil {
+		return
+	} // Пустой JSON
 	return
 }
 
 func HandleTasks(w http.ResponseWriter, r *http.Request) {
 	search := r.URL.Query().Get("search")
 
-	var tasks []db.Task
+	var tasks []models.Task
 	var err error
 
 	if search != "" {
 		// Проверка и форматирование даты
 		if parsedDate, err := time.Parse("02.01.2006", search); err == nil {
-			tasks, err = db.SearchTasksByDate(parsedDate.Format("20060102"))
+			tasks, err = taskdb.SearchTasksByDate(parsedDate.Format("20060102"))
 		} else {
 			// Поиск по заголовку или комментарию
-			tasks, err = db.SearchTasksByText(search)
+			tasks, err = taskdb.SearchTasksByText(search)
 		}
 	} else {
 		// Возвращаем все задачи, если строка поиска пустая
-		tasks, err = db.GetTasksFromDB()
+		tasks, err = taskdb.GetTasksFromDB()
 	}
 
 	if err != nil {
@@ -235,10 +249,13 @@ func HandleTasks(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if tasks == nil {
-		tasks = []db.Task{}
+		tasks = []models.Task{}
 	}
 
-	json.NewEncoder(w).Encode(map[string][]db.Task{"tasks": tasks})
+	err = json.NewEncoder(w).Encode(map[string][]models.Task{"tasks": tasks})
+	if err != nil {
+		return
+	}
 }
 
 func HandleTaskDone(w http.ResponseWriter, r *http.Request) {
@@ -256,7 +273,7 @@ func HandleTaskDone(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Получаем задачу из базы данных
-	task, err := db.GetTaskByID(id)
+	task, err := taskdb.GetTaskByID(id)
 	if err != nil {
 		http.Error(w, `{"error": "Task not found"}`, http.StatusNotFound)
 		return
@@ -273,7 +290,7 @@ func HandleTaskDone(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Отмечаем задачу как выполненную
-	if err := db.MarkTaskAsDone(id, nextDate); err != nil {
+	if err := taskdb.MarkTaskAsDone(id, nextDate); err != nil {
 		http.Error(w, `{"error": "Failed to mark task as done"}`, http.StatusInternalServerError)
 		return
 	}
@@ -281,7 +298,10 @@ func HandleTaskDone(w http.ResponseWriter, r *http.Request) {
 	// Возвращаем статус 204 No Content (пустое тело)
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK) // Возвращаем статус 200 OK
-	w.Write([]byte("{}"))        // Пустой JSON
+	_, err = w.Write([]byte("{}"))
+	if err != nil {
+		return
+	} // Пустой JSON
 }
 
 func HandleNextDate(w http.ResponseWriter, r *http.Request) {
