@@ -4,23 +4,18 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"os"
 
 	"github.com/deeramster/go_final_project/auth"
+	"github.com/deeramster/go_final_project/config"
 	"github.com/deeramster/go_final_project/db"
 	"github.com/deeramster/go_final_project/handlers"
-
-	"github.com/joho/godotenv"
 )
 
 func main() {
 	//Get env variables
-	err := godotenv.Load()
-	if err != nil {
-		log.Println("Error loading env file, using default environment variables")
-	}
+	config.LoadConfig()
 
-	port := getPort()
+	port := config.AppConfig.Port
 
 	//Static files
 	http.Handle("/", http.FileServer(http.Dir("./web")))
@@ -39,12 +34,4 @@ func main() {
 	fmt.Printf("Server running on port %s...", port)
 	log.Fatal(http.ListenAndServe(":"+port, nil))
 
-}
-
-func getPort() string {
-	port := os.Getenv("TODO_PORT")
-	if port == "" {
-		port = "8080"
-	}
-	return port
 }

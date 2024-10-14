@@ -6,6 +6,7 @@ import (
 	"log"
 	"os"
 
+	"github.com/deeramster/go_final_project/config"
 	_ "github.com/mattn/go-sqlite3"
 )
 
@@ -20,7 +21,7 @@ type Task struct {
 }
 
 func InitDB() {
-	dbFile := os.Getenv("TODO_DBFILE")
+	dbFile := config.AppConfig.DBFile
 	if dbFile == "" {
 		dbFile = "scheduler.db"
 	}
@@ -59,7 +60,7 @@ func InitDB() {
 }
 
 func AddTaskToDB(task Task) (int64, error) {
-	dbFile := os.Getenv("TODO_DBFILE")
+	dbFile := config.AppConfig.DBFile
 	if dbFile == "" {
 		dbFile = "scheduler.db"
 	}
@@ -79,7 +80,7 @@ func AddTaskToDB(task Task) (int64, error) {
 }
 
 func GetTasksFromDB() ([]Task, error) {
-	dbFile := os.Getenv("TODO_DBFILE")
+	dbFile := config.AppConfig.DBFile
 	if dbFile == "" {
 		dbFile = "scheduler.db"
 	}
@@ -112,7 +113,7 @@ func GetTasksFromDB() ([]Task, error) {
 }
 
 func GetTaskByID(taskID int) (Task, error) {
-	dbFile := os.Getenv("TODO_DBFILE")
+	dbFile := config.AppConfig.DBFile
 	if dbFile == "" {
 		dbFile = "scheduler.db"
 	}
@@ -133,7 +134,7 @@ func GetTaskByID(taskID int) (Task, error) {
 }
 
 func MarkTaskAsDone(taskID int, nextDate string) error {
-	dbFile := os.Getenv("TODO_DBFILE")
+	dbFile := config.AppConfig.DBFile
 	if dbFile == "" {
 		dbFile = "scheduler.db"
 	}
@@ -156,7 +157,7 @@ func MarkTaskAsDone(taskID int, nextDate string) error {
 }
 
 func SearchTasksByDate(date string) ([]Task, error) {
-	dbFile := os.Getenv("TODO_DBFILE")
+	dbFile := config.AppConfig.DBFile
 	if dbFile == "" {
 		dbFile = "scheduler.db"
 	}
@@ -196,7 +197,7 @@ func SearchTasksByDate(date string) ([]Task, error) {
 }
 
 func SearchTasksByText(search string) ([]Task, error) {
-	dbFile := os.Getenv("TODO_DBFILE")
+	dbFile := config.AppConfig.DBFile
 	if dbFile == "" {
 		dbFile = "scheduler.db"
 	}
@@ -208,7 +209,6 @@ func SearchTasksByText(search string) ([]Task, error) {
 	defer db.Close()
 
 	var tasks []Task
-	log.Printf("Searching for tasks with query: %s", search) // Логируем запрос
 
 	// Подготовка поисковой строки для использования в SQL LIKE
 	searchPattern := fmt.Sprintf("%%%s%%", search)
@@ -243,15 +243,11 @@ func SearchTasksByText(search string) ([]Task, error) {
 		log.Printf("Error during rows iteration: %s", err)
 		return nil, err
 	}
-
-	// Логирование количества найденных задач
-	log.Printf("Found %d tasks for search query: %s", len(tasks), search)
-
 	return tasks, nil
 }
 
 func UpdateTaskInDB(task Task) error {
-	dbFile := os.Getenv("TODO_DBFILE")
+	dbFile := config.AppConfig.DBFile
 	if dbFile == "" {
 		dbFile = "scheduler.db"
 	}
@@ -267,7 +263,7 @@ func UpdateTaskInDB(task Task) error {
 }
 
 func DeleteTaskFromDB(taskID int) error {
-	dbFile := os.Getenv("TODO_DBFILE")
+	dbFile := config.AppConfig.DBFile
 	if dbFile == "" {
 		dbFile = "scheduler.db"
 	}

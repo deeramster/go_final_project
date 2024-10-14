@@ -3,15 +3,14 @@ package handlers
 import (
 	"encoding/json"
 	"net/http"
-	"os"
+
+	"github.com/deeramster/go_final_project/config"
 )
 
-// Структура для пароля
 type Credentials struct {
 	Password string `json:"password"`
 }
 
-// Обработчик для /api/signin
 func HandleSignIn(w http.ResponseWriter, r *http.Request) {
 	// Если метод GET, возвращаем страницу логина
 	if r.Method == http.MethodGet {
@@ -28,7 +27,7 @@ func HandleSignIn(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		storedPassword := os.Getenv("TODO_PASSWORD")
+		storedPassword := config.AppConfig.Password
 		if storedPassword == "" {
 			http.Error(w, `{"error": "Server is not configured"}`, http.StatusInternalServerError)
 			return
