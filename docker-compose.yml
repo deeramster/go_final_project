@@ -1,0 +1,8 @@
+version: '3.8'
+
+services:
+  scheduler:
+    image: rocketikman/scheduler:latest
+    ports:
+      - "7540:7540"
+
